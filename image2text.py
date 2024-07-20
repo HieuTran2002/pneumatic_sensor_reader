@@ -46,7 +46,7 @@ class reader():
         result = ""
 
         # coordinate for each line of text
-        line_text = [[150, 250, 5, 330], [20, 114, 5, 350]]
+        line_text = [[150, 260, 5, 330], [20, 114, 5, 390]]
 
         # pre-processing
         image = resize(image, height=300)
@@ -72,9 +72,26 @@ class reader():
                     if not birdeye.any():
                         return None
                     textBinary = cv2.inRange(birdeye, 0, 140)
+
+                    # enclosing frame of the text
+                    text_contours, _ = cv2.findContours(textBinary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                    x_min = 500
+                    for cnt in text_contours:
+                        x, y, w, h = cv2.boundingRect(cnt)
+                        area = cv2.contourArea(cnt)
+                        if x_min > x:
+                            x_min = x
+                        # print(f"width {i}", x, area)
+                    if x_min > 10:
+                        x_min -= 10
+                    
+                    textBinary = textBinary[:, x_min:]
                     textBinary = cv2.dilate(textBinary, np.ones((3, 3), np.uint8))
+                    textBinary = resize(textBinary, height=50)
 
                     raw_result = ocr_from_image(textBinary)
+
+
 
                     # remove the \n at the end
                     raw_result = raw_result[:-1]
@@ -84,7 +101,7 @@ class reader():
                         result = raw_result[:-1]
                     else:
                         result = raw_result
-
+                    
                     try:
                         # add the number the list, the order should be [int, float] 
                         if i == 0:
@@ -96,6 +113,9 @@ class reader():
                         if self.devMode:
                             print(e)
                         continue
+
+                    if self.devMode:
+                        cv2.imshow(f"{i}", textBinary)
 
                 # only work with the biggest
                 break
@@ -125,6 +145,8 @@ if __name__ == "__main__":
 
     if platform == 'win32':
         # find the index of camera if OS is window
+        camereFile = 5
+        # cap = cv2.VideoCapture(camereFile)
         for i in range(5, -1, -1):
             success, _ = cap.read()
             if not success:
