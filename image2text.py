@@ -19,7 +19,6 @@ def split_32bit_to_16bit(value, inverse=False):
 def doNothing(e):
     pass
 
-
 def ocr_from_image(gray):
     """Use pytesseract to do OCR on the gray.""" 
     text = pytesseract.image_to_string(gray, lang='eng')
@@ -125,14 +124,14 @@ class reader():
                 image = cv2.rectangle(image, (box[2], box[0]), (box[3], box[1]), (0, 255, 0), 2) 
 
             result_statck = np.concatenate([image, cv2.cvtColor(hsv_binary, cv2.COLOR_GRAY2RGB)], axis=1)
-            print("Readed text ", resultList)
             cv2.imshow('Press Q to exit.', result_statck)
+        print("Readed text ", resultList)
 
         if len(resultList) == 2:
             # convert and split the list of number int bytes
-            byte1 = int.from_bytes(pack("!f", resultList[0]))
+            byte1 = resultList[0]
             byte2 = int.from_bytes(pack("!f", resultList[1]))
-            return split_32bit_to_16bit(byte1, True) + split_32bit_to_16bit(byte2, False)
+            return split_32bit_to_16bit(byte1, True) + split_32bit_to_16bit(byte2, True)
 
         return None
 
@@ -145,9 +144,9 @@ if __name__ == "__main__":
 
     if platform == 'win32':
         # find the index of camera if OS is window
-        camereFile = 5
+        camereFile = 10
         # cap = cv2.VideoCapture(camereFile)
-        for i in range(5, -1, -1):
+        for i in range(10, -1, -1):
             success, _ = cap.read()
             if not success:
                 print(f"{camereFile} isn't valide.")

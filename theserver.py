@@ -22,6 +22,8 @@ from pymodbus.server import (
 _logger = logging.getLogger(__file__)
 _logger.setLevel(logging.INFO)
 
+screen_reader = screenReader()
+
 def setup_server(description=None, context=None, cmdline=None):
     """Run server setup."""
     args = helper.get_commandline(server=True, description=description, cmdline=cmdline)
@@ -182,6 +184,7 @@ async def run_async_server(args):
         )
     return server
 
+
 async def updating_task(context):
     """Update values in server.
 
@@ -196,20 +199,19 @@ async def updating_task(context):
     address = 0
 
     # update data
+    asyncio.create_task(screen_reader.update_frame())
     while True:
-        await asyncio.sleep(1)
+        values = await screen_reader.read()
 
-        values = screenReader.read()
-        print("here")
         if values:
-            print("value ", values)
-
             context[slave_id].setValues(fc_as_hex, address, values)
             txt = f"updating_task: values: {values!s} at address {address!s}"
 
             _logger.warning(txt)
         else:
             print("No valid value!!!")
+
+        await asyncio.sleep(1)
 
 def setup_updating_server(cmdline=None):
     """Run server setup."""
@@ -246,4 +248,4 @@ async def main(cmdline=None):
 
 
 if __name__ == "__main__":
-    asyncio.run(main(), debug=True)
+    asyncio.run(main(), debug=False)
