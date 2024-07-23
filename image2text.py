@@ -2,7 +2,7 @@ import cv2
 from numpy import array, intp, ones, uint8, concatenate
 from imutils import resize
 from birbeye import get_birdseye_view 
-from pytesseract import image_to_string
+from pytesseract import image_to_string, tesseract_cmd
 from struct import pack
 
 
@@ -34,7 +34,7 @@ class reader():
     def __init__(self, _devMode=False):
         from sys import platform
         if platform == 'win32':
-            pytesseract.pytesseract.tesseract_cmd = r'Tesseract-OCR\tesseract.exe'
+            tesseract_cmd = r'Tesseract-OCR\tesseract.exe'
         print("Initializing")
         self.devMode = _devMode
 
