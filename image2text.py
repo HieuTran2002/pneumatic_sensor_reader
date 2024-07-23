@@ -1,8 +1,8 @@
 import cv2
-import numpy as np
+from numpy import array, intp, ones, uint8, concatenate
 from imutils import resize
 from birbeye import get_birdseye_view 
-import pytesseract
+from pytesseract import image_to_string
 from struct import pack
 
 
@@ -19,15 +19,16 @@ def split_32bit_to_16bit(value, inverse=False):
 def doNothing(e):
     pass
 
+
 def ocr_from_image(gray):
     """Use pytesseract to do OCR on the gray.""" 
-    text = pytesseract.image_to_string(gray, lang='eng')
-    return text
+    text = image_to_string(gray, lang='eng',  config=r'--oem 3 --psm 7  -c tessedit_char_whitelist=0123456789.')
+    return text.strip()
 
 
 class reader():
-    screen_hsv_lower = np.array([0, 0, 170])
-    screen_hsv_upper = np.array([255, 255, 255])
+    screen_hsv_lower = array([0, 0, 170])
+    screen_hsv_upper = array([255, 255, 255])
     devMode = False
 
     def __init__(self, _devMode=False):
@@ -38,7 +39,7 @@ class reader():
         self.devMode = _devMode
 
     def readText(self, image):
-        """Read and return a list of text within the given image"""
+        """ Read and return a list of text within the given image """
         textBinary = None
         birdeye = None
         resultList = []
@@ -63,7 +64,7 @@ class reader():
                 # find min-enclosing rectangle around the screen
                 rect = cv2.minAreaRect(contour) 
                 box = cv2.boxPoints(rect) 
-                box = np.intp(box) 
+                box = intp(box) 
 
                 for i in range(0, 2):
                     birdeye = get_birdseye_view(third, box)[line_text[i][0]:line_text[i][1], line_text[i][2]:line_text[i][3]]
@@ -85,22 +86,17 @@ class reader():
                         x_min -= 10
                     
                     textBinary = textBinary[:, x_min:]
-                    textBinary = cv2.dilate(textBinary, np.ones((3, 3), np.uint8))
+                    textBinary = cv2.dilate(textBinary, ones((3, 3), uint8))
                     textBinary = resize(textBinary, height=50)
 
                     raw_result = ocr_from_image(textBinary)
 
-
-
-                    # remove the \n at the end
-                    raw_result = raw_result[:-1]
-
-                    # remove the last char if it's not a digit. 
+                    # remove the last char if it's not a digit.
                     if len(raw_result) > 2 and not raw_result[-1].isdigit():
                         result = raw_result[:-1]
                     else:
                         result = raw_result
-                    
+
                     try:
                         # add the number the list, the order should be [int, float] 
                         if i == 0:
@@ -123,9 +119,8 @@ class reader():
             for box in line_text:
                 image = cv2.rectangle(image, (box[2], box[0]), (box[3], box[1]), (0, 255, 0), 2) 
 
-            result_statck = np.concatenate([image, cv2.cvtColor(hsv_binary, cv2.COLOR_GRAY2RGB)], axis=1)
+            result_statck = concatenate([image, cv2.cvtColor(hsv_binary, cv2.COLOR_GRAY2RGB)], axis=1)
             cv2.imshow('Press Q to exit.', result_statck)
-        print("Readed text ", resultList)
 
         if len(resultList) == 2:
             # convert and split the list of number int bytes
@@ -156,6 +151,7 @@ if __name__ == "__main__":
                 print(f"Currently working with {camereFile} camera.")
                 break
 
+    print(camereFile)
     while 1:
         _, image = cap.read()
         result = _reader.readText(image)
@@ -165,3 +161,4 @@ if __name__ == "__main__":
         if key == ord('q'):
             break
     cv2.destroyAllWindows()
+    cap.release()
