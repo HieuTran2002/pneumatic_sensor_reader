@@ -3,6 +3,7 @@ import sys
 import logging
 import helper
 from screenReader import screenReader
+from time import time
 
 from pymodbus import __version__ as pymodbus_version
 from pymodbus.datastore import (
@@ -197,21 +198,24 @@ async def updating_task(context):
     fc_as_hex = 3
     slave_id = 0x01
     address = 0
+    prev = time()
 
     # update data
     asyncio.create_task(screen_reader.update_frame())
     while True:
+        await asyncio.sleep(0.1)
         values = await screen_reader.read()
 
         if values:
+            elasped = time() - prev
             context[slave_id].setValues(fc_as_hex, address, values)
-            txt = f"updating_task: values: {values!s} at address {address!s}"
+            txt = f"updating_task: values: {values!s} at address {address!s} took {elasped:.2f} seconds"
+            prev = time()
 
             _logger.warning(txt)
         else:
             print("No valid value!!!")
 
-        await asyncio.sleep(1)
 
 def setup_updating_server(cmdline=None):
     """Run server setup."""
